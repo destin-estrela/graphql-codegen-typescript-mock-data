@@ -6,6 +6,7 @@ import {
     ListTypeNode,
     NamedTypeNode,
     ObjectTypeDefinitionNode,
+    Kind,
 } from 'graphql';
 import { faker } from '@faker-js/faker';
 import casual from 'casual';
@@ -544,6 +545,7 @@ export interface TypescriptMocksPluginConfig {
     useImplementingTypes?: boolean;
     defaultNullableToNull?: boolean;
     useTypeImports?: boolean;
+    wrapOverrideObjectWithMock?: boolean;
 }
 
 interface TypeItem {
@@ -677,6 +679,15 @@ export const plugin: PluginFunction<TypescriptMocksPluginConfig> = (schema, docu
                         nonNull: false,
                     });
 
+                    if (
+                        config.wrapOverrideObjectWithMock &&
+                        node.type.kind === Kind.NAMED_TYPE &&
+                        value.toString().includes('()')
+                    ) {
+                        return `        ${fieldName}: overrides && overrides.hasOwnProperty('${fieldName}') ? ${
+                            value.toString().split('()')[0]
+                        }(overrides.${fieldName}!) : ${value},`;
+                    }
                     return `        ${fieldName}: overrides && overrides.hasOwnProperty('${fieldName}') ? overrides.${fieldName}! : ${value},`;
                 },
             };

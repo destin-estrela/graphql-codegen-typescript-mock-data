@@ -134,6 +134,16 @@ it('should generate mock data with typename if addTypename is true', async () =>
     expect(result).toMatchSnapshot();
 });
 
+it('should wrap overrided object types with its associated mock function when wrapOverrideObjectWithmock is true', async () => {
+    const result = await plugin(testSchema, [], { wrapOverrideObjectWithMock: true });
+
+    expect(result).toBeDefined();
+    expect(result).toContain(
+        "avatar: overrides && overrides.hasOwnProperty('avatar') ? anAvatar(overrides.avatar!) : anAvatar(),",
+    );
+    expect(result).toMatchSnapshot();
+});
+
 it('should generate mock data with PascalCase enum values by default', async () => {
     const result = await plugin(testSchema, [], {});
 
