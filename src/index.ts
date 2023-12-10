@@ -6,7 +6,6 @@ import {
     ListTypeNode,
     NamedTypeNode,
     ObjectTypeDefinitionNode,
-    Kind,
 } from 'graphql';
 import { faker } from '@faker-js/faker';
 import casual from 'casual';
@@ -39,6 +38,95 @@ type Options<T = TypeNode> = {
     useImplementingTypes: boolean;
     defaultNullableToNull: boolean;
     nonNull: boolean;
+    wrapOverrideObjectWithMock?: boolean;
+};
+
+const doNamedOverride = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode>): boolean => {
+    if (!opts.wrapOverrideObjectWithMock) {
+        return false;
+    }
+
+    const typeName = opts.currentType.name.value;
+
+    if (['String', 'Float', 'ID', 'Boolean', 'Int'].includes(typeName)) {
+        return false;
+    }
+
+    if (getFoundTypes(typeName, opts.types).length > 0) {
+        // don't override to the first type here, will cause conflicts when user wants to specify a certain subtype
+        // instead, disable override wrapping and force the user to decide which generated mock to use like normal
+        return false;
+    }
+
+    if (opts.terminateCircularRelationships) {
+        // TODO: not sure what to do here yet
+        return false;
+    }
+
+    return true;
+};
+
+const doOverride = (opts: Options) => {
+    switch (opts.currentType.kind) {
+        case 'NamedType': {
+            return doNamedOverride({
+                ...opts,
+                currentType: opts.currentType,
+            });
+        }
+        case 'NonNullType': {
+            return doOverride({
+                ...opts,
+                currentType: opts.currentType.type,
+                nonNull: true,
+            });
+        }
+        case 'ListType': {
+            return doOverride({
+                ...opts,
+                currentType: opts.currentType.type,
+            });
+        }
+        default:
+            throw new Error('unreached');
+    }
+};
+
+const generateMockOverride = (opts: Options): string => {
+    const baseString = `overrides.${opts.fieldName}!`;
+
+    if (!doOverride(opts)) {
+        return baseString;
+    }
+
+    switch (opts.currentType.kind) {
+        case 'NamedType': {
+            const typeName = opts.currentType.name.value;
+            const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
+            const mockName = toMockName(typeName, casedName, opts.prefix);
+
+            return `${mockName}(${baseString})`;
+        }
+        case 'NonNullType':
+            return generateMockOverride({
+                ...opts,
+                currentType: opts.currentType.type,
+                nonNull: true,
+            });
+
+        case 'ListType': {
+            const typeName =
+                opts.currentType.type.kind === 'NonNullType'
+                    ? (opts.currentType.type.type as NamedTypeNode).name.value
+                    : (opts.currentType.type as NamedTypeNode).name.value;
+            const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
+            const mockName = toMockName(typeName, casedName, opts.prefix);
+
+            return `${baseString}.map(item => item ? ${mockName}(item) : null)`;
+        }
+        default:
+            throw new Error('unreached');
+    }
 };
 
 const convertName = (value: string, fn: (v: string) => string, transformUnderscore: boolean): string => {
@@ -268,6 +356,14 @@ const getNamedImplementType = (opts: Options<TypeItem['types']>): string | numbe
     });
 };
 
+const getFoundTypes = (typeName: string, types: TypeItem[]) => {
+    return types.filter((foundType: TypeItem) => {
+        if (foundType.types && 'interfaces' in foundType.types)
+            return foundType.types.interfaces.some((item) => item.name.value === typeName);
+        return foundType.name === typeName;
+    });
+};
+
 const getNamedType = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode>): string | number | boolean => {
     if (!opts.currentType) {
         return '';
@@ -302,11 +398,7 @@ const getNamedType = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode>): 
             return handleValueGeneration(opts, customScalar, mockValueGenerator.integer);
         }
         default: {
-            const foundTypes = opts.types.filter((foundType: TypeItem) => {
-                if (foundType.types && 'interfaces' in foundType.types)
-                    return foundType.types.interfaces.some((item) => item.name.value === name);
-                return foundType.name === name;
-            });
+            const foundTypes = getFoundTypes(name, opts.types);
 
             if (foundTypes.length) {
                 const foundType = foundTypes[0];
@@ -655,7 +747,7 @@ export const plugin: PluginFunction<TypescriptMocksPluginConfig> = (schema, docu
             return {
                 name: fieldName,
                 mockFn: (typeName: string) => {
-                    const value = generateMockValue({
+                    const opts = {
                         typeName,
                         fieldName,
                         types,
@@ -677,18 +769,13 @@ export const plugin: PluginFunction<TypescriptMocksPluginConfig> = (schema, docu
                         useImplementingTypes,
                         defaultNullableToNull,
                         nonNull: false,
-                    });
+                        wrapOverrideObjectWithMock: config.wrapOverrideObjectWithMock,
+                    };
 
-                    if (
-                        config.wrapOverrideObjectWithMock &&
-                        node.type.kind === Kind.NAMED_TYPE &&
-                        value.toString().includes('()')
-                    ) {
-                        return `        ${fieldName}: overrides && overrides.hasOwnProperty('${fieldName}') ? ${
-                            value.toString().split('()')[0]
-                        }(overrides.${fieldName}!) : ${value},`;
-                    }
-                    return `        ${fieldName}: overrides && overrides.hasOwnProperty('${fieldName}') ? overrides.${fieldName}! : ${value},`;
+                    const value = generateMockValue(opts);
+                    return `        ${fieldName}: overrides && overrides.hasOwnProperty('${fieldName}') ? ${generateMockOverride(
+                        opts,
+                    )} : ${value},`;
                 },
             };
         },
