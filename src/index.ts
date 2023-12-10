@@ -41,29 +41,25 @@ type Options<T = TypeNode> = {
     wrapOverrideObjectWithMock?: boolean;
 };
 
-const doNamedOverride = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode>): boolean => {
-    if (!opts.wrapOverrideObjectWithMock) {
-        return false;
-    }
-
+const getNamedOverride = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode>, baseString): string => {
     const typeName = opts.currentType.name.value;
 
-    if (['String', 'Float', 'ID', 'Boolean', 'Int'].includes(typeName)) {
-        return false;
-    }
-
-    if (getFoundTypes(typeName, opts.types).length > 0) {
-        // don't override to the first type here, will cause conflicts when user wants to specify a certain subtype
-        // instead, disable override wrapping and force the user to decide which generated mock to use like normal
-        return false;
+    if (
+        !opts.wrapOverrideObjectWithMock ||
+        ['String', 'Float', 'ID', 'Boolean', 'Int'].includes(typeName) ||
+        getFoundTypes(typeName, opts.types).length > 0
+    ) {
+        return baseString;
     }
 
     if (opts.terminateCircularRelationships) {
         // TODO: not sure what to do here yet
-        return false;
+        return baseString;
     }
 
-    return true;
+    const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
+    const mockName = toMockName(typeName, casedName, opts.prefix);
+    return `${mockName}(${baseString})`;
 };
 
 const generateMockListOverride = (opts: Options): string => {
@@ -71,20 +67,15 @@ const generateMockListOverride = (opts: Options): string => {
 
     switch (opts.currentType.kind) {
         case 'NamedType': {
-            if (
-                !doNamedOverride({
+            const namedOverride = getNamedOverride(
+                {
                     ...opts,
                     currentType: opts.currentType,
-                })
-            ) {
-                return baseString;
-            }
-
-            const typeName = opts.currentType.name.value;
-            const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
-            const mockName = toMockName(typeName, casedName, opts.prefix);
-
-            return `${baseString}.map(item => item ? ${mockName}(item) : null)`;
+                },
+                'item',
+            );
+            // avoid useless map when not an object
+            return namedOverride === 'item' ? baseString : `${baseString}.map(item => item ? ${namedOverride} : null)`;
         }
         case 'NonNullType': {
             return generateMockListOverride({
@@ -103,24 +94,15 @@ const generateMockListOverride = (opts: Options): string => {
 };
 
 const generateMockOverride = (opts: Options): string => {
-    const baseString = `overrides.${opts.fieldName}!`;
-
     switch (opts.currentType.kind) {
         case 'NamedType': {
-            if (
-                !doNamedOverride({
+            return getNamedOverride(
+                {
                     ...opts,
                     currentType: opts.currentType,
-                })
-            ) {
-                return baseString;
-            }
-
-            const typeName = opts.currentType.name.value;
-            const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
-            const mockName = toMockName(typeName, casedName, opts.prefix);
-
-            return `${mockName}(${baseString})`;
+                },
+                `overrides.${opts.fieldName}!`,
+            );
         }
         case 'NonNullType':
             return generateMockOverride({
