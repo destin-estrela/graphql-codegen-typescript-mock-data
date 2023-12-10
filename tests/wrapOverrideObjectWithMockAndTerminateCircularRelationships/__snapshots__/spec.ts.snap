@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should support wrapOverrideObjectWithMock and terminateCircularRelationships at the same time 1`] = `
+"
+export const aCamelCaseThing = (overrides?: Partial<CamelCaseThing>, _relationshipsToOmit: Set<string> = new Set()): CamelCaseThing => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('CamelCaseThing');
+    return {
+        id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ratione',
+    };
+};
+
+export const aMain = (overrides?: Partial<Main>, _relationshipsToOmit: Set<string> = new Set()): Main => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('Main');
+    return {
+        camelCaseThing: overrides && overrides.hasOwnProperty('camelCaseThing') ? (relationshipsToOmit.has('CamelCaseThing') ? overrides.camelCaseThing! : aCamelCaseThing(overrides.camelCaseThing!, relationshipsToOmit)) : relationshipsToOmit.has('CamelCaseThing') ? {} as CamelCaseThing : aCamelCaseThing({}, relationshipsToOmit),
+        listTest: overrides && overrides.hasOwnProperty('listTest') ? overrides.listTest!.map(item => (relationshipsToOmit.has('CamelCaseThing') ? item : aCamelCaseThing(item, relationshipsToOmit))) : [relationshipsToOmit.has('CamelCaseThing') ? {} as CamelCaseThing : aCamelCaseThing({}, relationshipsToOmit)],
+    };
+};
+"
+`;

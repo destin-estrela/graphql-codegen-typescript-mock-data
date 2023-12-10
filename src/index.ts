@@ -52,13 +52,13 @@ const getNamedOverride = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode
         return baseString;
     }
 
-    if (opts.terminateCircularRelationships) {
-        // TODO: not sure what to do here yet
-        return baseString;
-    }
-
     const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
     const mockName = toMockName(typeName, casedName, opts.prefix);
+
+    if (opts.terminateCircularRelationships) {
+        return `(relationshipsToOmit.has('${casedName}') ? ${baseString} : ${mockName}(${baseString}, relationshipsToOmit))`;
+    }
+
     return `${mockName}(${baseString})`;
 };
 
