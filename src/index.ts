@@ -66,26 +66,36 @@ const doNamedOverride = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode>
     return true;
 };
 
-const doOverride = (opts: Options) => {
+const generateMockListOverride = (opts: Options): string => {
+    const baseString = `overrides.${opts.fieldName}!`;
+
     switch (opts.currentType.kind) {
         case 'NamedType': {
-            return doNamedOverride({
-                ...opts,
-                currentType: opts.currentType,
-            });
+            if (
+                !doNamedOverride({
+                    ...opts,
+                    currentType: opts.currentType,
+                })
+            ) {
+                return baseString;
+            }
+
+            const typeName = opts.currentType.name.value;
+            const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
+            const mockName = toMockName(typeName, casedName, opts.prefix);
+
+            return `${baseString}.map(item => item ? ${mockName}(item) : null)`;
         }
         case 'NonNullType': {
-            return doOverride({
+            return generateMockListOverride({
                 ...opts,
                 currentType: opts.currentType.type,
                 nonNull: true,
             });
         }
         case 'ListType': {
-            return doOverride({
-                ...opts,
-                currentType: opts.currentType.type,
-            });
+            // TODO: what if its a list of list of objects?
+            return baseString;
         }
         default:
             throw new Error('unreached');
@@ -95,12 +105,17 @@ const doOverride = (opts: Options) => {
 const generateMockOverride = (opts: Options): string => {
     const baseString = `overrides.${opts.fieldName}!`;
 
-    if (!doOverride(opts)) {
-        return baseString;
-    }
-
     switch (opts.currentType.kind) {
         case 'NamedType': {
+            if (
+                !doNamedOverride({
+                    ...opts,
+                    currentType: opts.currentType,
+                })
+            ) {
+                return baseString;
+            }
+
             const typeName = opts.currentType.name.value;
             const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
             const mockName = toMockName(typeName, casedName, opts.prefix);
@@ -115,14 +130,10 @@ const generateMockOverride = (opts: Options): string => {
             });
 
         case 'ListType': {
-            const typeName =
-                opts.currentType.type.kind === 'NonNullType'
-                    ? (opts.currentType.type.type as NamedTypeNode).name.value
-                    : (opts.currentType.type as NamedTypeNode).name.value;
-            const casedName = createNameConverter(opts.typeNamesConvention, opts.transformUnderscore)(typeName);
-            const mockName = toMockName(typeName, casedName, opts.prefix);
-
-            return `${baseString}.map(item => item ? ${mockName}(item) : null)`;
+            return generateMockListOverride({
+                ...opts,
+                currentType: opts.currentType.type,
+            });
         }
         default:
             throw new Error('unreached');
