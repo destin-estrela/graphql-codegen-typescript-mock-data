@@ -15,9 +15,6 @@ export const aUser = (overrides?: Partial<User>): User => {
         creationDate: overrides && overrides.hasOwnProperty('creationDate') ? overrides.creationDate! : '1970-01-09T16:33:21.532Z',
         login: overrides && overrides.hasOwnProperty('login') ? overrides.login! : 'libero',
         avatar: overrides && overrides.hasOwnProperty('avatar') ? anAvatar(overrides.avatar!) : anAvatar(),
-        nonNullableAvatar: overrides && overrides.hasOwnProperty('nonNullableAvatar') ? anAvatar(overrides.nonNullableAvatar!) : anAvatar(),
-        listOfObjects: overrides && overrides.hasOwnProperty('listOfObjects') ? overrides.listOfObjects!.map(item => item ? anAbcType(item) : null) : [anAbcType()],
-        nullableListOfObjects: overrides && overrides.hasOwnProperty('nullableListOfObjects') ? overrides.nullableListOfObjects!.map(item => item ? anAbcType(item) : null) : [anAbcType()],
         status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : Status.Online,
         customStatus: overrides && overrides.hasOwnProperty('customStatus') ? overrides.customStatus! : AbcStatus.HasXyzStatus,
         scalarValue: overrides && overrides.hasOwnProperty('scalarValue') ? overrides.scalarValue! : 'neque',
@@ -26,6 +23,18 @@ export const aUser = (overrides?: Partial<User>): User => {
         prefixedEnum: overrides && overrides.hasOwnProperty('prefixedEnum') ? overrides.prefixedEnum! : PrefixedEnum.PrefixedValue,
         interfaceThing: overrides && overrides.hasOwnProperty('interfaceThing') ? anInterfaceThing(overrides.interfaceThing!) : anInterfaceThing(),
         circularThing: overrides && overrides.hasOwnProperty('circularThing') ? aCircularA(overrides.circularThing!) : aCircularA(),
+        nonNullableAvatar: overrides && overrides.hasOwnProperty('nonNullableAvatar') ? anAvatar(overrides.nonNullableAvatar!) : anAvatar(),
+    };
+};
+
+export const aListType = (overrides?: Partial<ListType>): ListType => {
+    return {
+        stringList: overrides && overrides.hasOwnProperty('stringList') ? overrides.stringList! : ['voluptatem'],
+        nullableListOfObjects: overrides && overrides.hasOwnProperty('nullableListOfObjects') ? overrides.nullableListOfObjects!.map(item => item ? anAbcType(item) : null) : [anAbcType()],
+        nullableStringList: overrides && overrides.hasOwnProperty('nullableStringList') ? overrides.nullableStringList! : ['eum'],
+        listOfObjects: overrides && overrides.hasOwnProperty('listOfObjects') ? overrides.listOfObjects!.map(item => anAbcType(item)) : [anAbcType()],
+        nonNullableNestedList: overrides && overrides.hasOwnProperty('nonNullableNestedList') ? overrides.nonNullableNestedList!.map(item => item.map(item => item.map(item => item.map(item => anAvatar(item))))) : [[[[anAvatar()]]]],
+        nestedList: overrides && overrides.hasOwnProperty('nestedList') ? overrides.nestedList!.map(item => item ? item.map(item => item ? item.map(item => item ? anAbcType(item) : null) : null) : null) : [[[anAbcType()]]],
     };
 };
 
@@ -44,7 +53,7 @@ export const aCircularB = (overrides?: Partial<CircularB>): CircularB => {
 
 export const aCircularC = (overrides?: Partial<CircularC>): CircularC => {
     return {
-        aCollection: overrides && overrides.hasOwnProperty('aCollection') ? overrides.aCollection!.map(item => item ? aCircularA(item) : null) : [aCircularA()],
+        aCollection: overrides && overrides.hasOwnProperty('aCollection') ? overrides.aCollection!.map(item => aCircularA(item)) : [aCircularA()],
     };
 };
 
@@ -95,14 +104,6 @@ export const aPrefixedResponse = (overrides?: Partial<PrefixedResponse>): Prefix
 export const anAbcType = (overrides?: Partial<AbcType>): AbcType => {
     return {
         abc: overrides && overrides.hasOwnProperty('abc') ? overrides.abc! : 'sit',
-    };
-};
-
-export const aListType = (overrides?: Partial<ListType>): ListType => {
-    return {
-        stringList: overrides && overrides.hasOwnProperty('stringList') ? overrides.stringList! : ['voluptatem'],
-        nullableStringList: overrides && overrides.hasOwnProperty('nullableStringList') ? overrides.nullableStringList! : ['eum'],
-        listOfObjects: overrides && overrides.hasOwnProperty('listOfObjects') ? overrides.listOfObjects!.map(item => item ? anAbcType(item) : null) : [anAbcType()],
     };
 };
 

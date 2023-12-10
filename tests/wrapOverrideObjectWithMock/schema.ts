@@ -14,9 +14,6 @@ export default buildSchema(/* GraphQL */ `
         creationDate: Date!
         login: String!
         avatar: Avatar
-        nonNullableAvatar: Avatar!
-        listOfObjects: [ABCType!]!
-        nullableListOfObjects: [ABCType]
         status: Status!
         customStatus: ABCStatus
         scalarValue: AnyObject!
@@ -25,6 +22,16 @@ export default buildSchema(/* GraphQL */ `
         prefixedEnum: Prefixed_Enum
         interfaceThing: InterfaceThing!
         circularThing: CircularA!
+        nonNullableAvatar: Avatar!
+    }
+
+    type ListType {
+        stringList: [String!]!
+        nullableListOfObjects: [ABCType]
+        nullableStringList: [String!]
+        listOfObjects: [ABCType!]!
+        nonNullableNestedList: [[[[Avatar!]!]!]!]!
+        nestedList: [[[ABCType]]]
     }
 
     type CircularA {
@@ -72,12 +79,6 @@ export default buildSchema(/* GraphQL */ `
 
     type ABCType {
         abc: String!
-    }
-
-    type ListType {
-        stringList: [String!]!
-        nullableStringList: [String!]
-        listOfObjects: [ABCType!]!
     }
 
     input UpdateUserInput {

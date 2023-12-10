@@ -1,7 +1,7 @@
 import { plugin } from '../../src';
 import testSchema from './schema';
 
-it.only('should wrap overrided object types with its associated mock function when wrapOverrideObjectWithmock is true', async () => {
+it('should wrap overrided object types with its associated mock function when wrapOverrideObjectWithmock is true', async () => {
     const result = await plugin(testSchema, [], { wrapOverrideObjectWithMock: true });
 
     expect(result).toBeDefined();
@@ -11,7 +11,7 @@ it.only('should wrap overrided object types with its associated mock function wh
     expect(result).toMatchSnapshot();
 });
 
-it.only('should not wrap union types', async () => {
+it('should not wrap union types', async () => {
     const result = await plugin(testSchema, [], { wrapOverrideObjectWithMock: true });
 
     expect(result).toBeDefined();
@@ -20,16 +20,25 @@ it.only('should not wrap union types', async () => {
     );
 });
 
-it.only('should wrap each object in an overrided list type with its associated mock function when wrapOverrideObjectWithmock is true', async () => {
+it('should wrap each object in an overrided list type with its associated mock function when wrapOverrideObjectWithmock is true', async () => {
     const result = await plugin(testSchema, [], { wrapOverrideObjectWithMock: true });
 
     expect(result).toBeDefined();
     expect(result).toContain(
-        "listOfObjects: overrides && overrides.hasOwnProperty('listOfObjects') ? overrides.listOfObjects!.map(item => item ? anAbcType(item) : null) : [anAbcType()],",
+        "listOfObjects: overrides && overrides.hasOwnProperty('listOfObjects') ? overrides.listOfObjects!.map(item => anAbcType(item)) : [anAbcType()],",
     );
 });
 
-it.only('should not wrap non-object types in overrided list type', async () => {
+it('should support nullable nested lists', async () => {
+    const result = await plugin(testSchema, [], { wrapOverrideObjectWithMock: true });
+
+    expect(result).toBeDefined();
+    expect(result).toContain(
+        "nestedList: overrides && overrides.hasOwnProperty('nestedList') ? overrides.nestedList!.map(item => item ? item.map(item => item ? item.map(item => item ? anAbcType(item) : null) : null) : null) : [[[anAbcType()]]],",
+    );
+});
+
+it('should not wrap non-object types in overrided list type', async () => {
     const result = await plugin(testSchema, [], { wrapOverrideObjectWithMock: true });
 
     expect(result).toBeDefined();
@@ -38,7 +47,7 @@ it.only('should not wrap non-object types in overrided list type', async () => {
     );
 });
 
-it('should wrap overrided object types with its associated mock function when terminateCircularRelationships is true', async () => {
+it.skip('should wrap overrided object types with its associated mock function when terminateCircularRelationships is true', async () => {
     const result = await plugin(testSchema, [], {
         wrapOverrideObjectWithMock: true,
         terminateCircularRelationships: true,

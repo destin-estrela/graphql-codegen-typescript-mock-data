@@ -41,7 +41,7 @@ type Options<T = TypeNode> = {
     wrapOverrideObjectWithMock?: boolean;
 };
 
-const getNamedOverride = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode>, baseString): string => {
+const getNamedOverride = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode>, baseString: string): string => {
     const typeName = opts.currentType.name.value;
 
     if (
@@ -62,9 +62,14 @@ const getNamedOverride = (opts: Options<NamedTypeNode | ObjectTypeDefinitionNode
     return `${mockName}(${baseString})`;
 };
 
-const generateMockListOverride = (opts: Options): string => {
-    const baseString = `overrides.${opts.fieldName}!`;
+const getListMapString = (listString: string, overrideString: string, nonNull: boolean) => {
+    if (nonNull) {
+        return `${listString}.map(item => ${overrideString})`;
+    }
+    return `${listString}.map(item => item ? ${overrideString} : null)`;
+};
 
+const generateMockListOverride = (opts: Options, baseString: string): string => {
     switch (opts.currentType.kind) {
         case 'NamedType': {
             const namedOverride = getNamedOverride(
@@ -75,18 +80,27 @@ const generateMockListOverride = (opts: Options): string => {
                 'item',
             );
             // avoid useless map when not an object
-            return namedOverride === 'item' ? baseString : `${baseString}.map(item => item ? ${namedOverride} : null)`;
+            return namedOverride === 'item' ? baseString : getListMapString(baseString, namedOverride, opts.nonNull);
         }
         case 'NonNullType': {
-            return generateMockListOverride({
-                ...opts,
-                currentType: opts.currentType.type,
-                nonNull: true,
-            });
+            return generateMockListOverride(
+                {
+                    ...opts,
+                    currentType: opts.currentType.type,
+                    nonNull: true,
+                },
+                baseString,
+            );
         }
         case 'ListType': {
-            // TODO: what if its a list of list of objects?
-            return baseString;
+            const namedOverride = generateMockListOverride(
+                {
+                    ...opts,
+                    currentType: opts.currentType.type,
+                },
+                'item',
+            );
+            return namedOverride === 'item' ? baseString : getListMapString(baseString, namedOverride, opts.nonNull);
         }
         default:
             throw new Error('unreached');
@@ -112,10 +126,13 @@ const generateMockOverride = (opts: Options): string => {
             });
 
         case 'ListType': {
-            return generateMockListOverride({
-                ...opts,
-                currentType: opts.currentType.type,
-            });
+            return generateMockListOverride(
+                {
+                    ...opts,
+                    currentType: opts.currentType.type,
+                },
+                `overrides.${opts.fieldName}!`,
+            );
         }
         default:
             throw new Error('unreached');
