@@ -79,7 +79,7 @@ const generateMockListOverride = (opts: Options, baseString: string): string => 
                 },
                 'item',
             );
-            // avoid useless map when not an object
+            // avoid useless map
             return namedOverride === 'item' ? baseString : getListMapString(baseString, namedOverride, opts.nonNull);
         }
         case 'NonNullType': {
@@ -97,9 +97,11 @@ const generateMockListOverride = (opts: Options, baseString: string): string => 
                 {
                     ...opts,
                     currentType: opts.currentType.type,
+                    nonNull: false,
                 },
                 'item',
             );
+            // avoid useless map
             return namedOverride === 'item' ? baseString : getListMapString(baseString, namedOverride, opts.nonNull);
         }
         default:
@@ -130,6 +132,7 @@ const generateMockOverride = (opts: Options): string => {
                 {
                     ...opts,
                     currentType: opts.currentType.type,
+                    nonNull: false,
                 },
                 `overrides.${opts.fieldName}!`,
             );

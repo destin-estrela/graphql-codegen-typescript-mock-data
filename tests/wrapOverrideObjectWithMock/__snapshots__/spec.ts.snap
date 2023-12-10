@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`should wrap overrided object types with its associated mock function when wrapOverrideObjectWithmock is true 1`] = `
+exports[`should wrap overrided object types with its associated mock function 1`] = `
 "
 export const anAvatar = (overrides?: Partial<Avatar>): Avatar => {
     return {
@@ -29,12 +29,12 @@ export const aUser = (overrides?: Partial<User>): User => {
 
 export const aListType = (overrides?: Partial<ListType>): ListType => {
     return {
-        stringList: overrides && overrides.hasOwnProperty('stringList') ? overrides.stringList! : ['voluptatem'],
-        nullableListOfObjects: overrides && overrides.hasOwnProperty('nullableListOfObjects') ? overrides.nullableListOfObjects!.map(item => item ? anAbcType(item) : null) : [anAbcType()],
-        nullableStringList: overrides && overrides.hasOwnProperty('nullableStringList') ? overrides.nullableStringList! : ['eum'],
-        listOfObjects: overrides && overrides.hasOwnProperty('listOfObjects') ? overrides.listOfObjects!.map(item => anAbcType(item)) : [anAbcType()],
-        nonNullableNestedList: overrides && overrides.hasOwnProperty('nonNullableNestedList') ? overrides.nonNullableNestedList!.map(item => item.map(item => item.map(item => item.map(item => anAvatar(item))))) : [[[[anAvatar()]]]],
-        nestedList: overrides && overrides.hasOwnProperty('nestedList') ? overrides.nestedList!.map(item => item ? item.map(item => item ? item.map(item => item ? anAbcType(item) : null) : null) : null) : [[[anAbcType()]]],
+        listTest1: overrides && overrides.hasOwnProperty('listTest1') ? overrides.listTest1!.map(item => item ? anAvatar(item) : null) : [anAvatar()],
+        listTest2: overrides && overrides.hasOwnProperty('listTest2') ? overrides.listTest2!.map(item => anAvatar(item)) : [anAvatar()],
+        listTest3: overrides && overrides.hasOwnProperty('listTest3') ? overrides.listTest3!.map(item => item ? item.map(item => item ? item.map(item => item.map(item => item.map(item => anAvatar(item)))) : null) : null) : [[[[[anAvatar()]]]]],
+        listTest4: overrides && overrides.hasOwnProperty('listTest4') ? overrides.listTest4!.map(item => item.map(item => item ? item.map(item => anAvatar(item)) : null)) : [[[anAvatar()]]],
+        listTest5: overrides && overrides.hasOwnProperty('listTest5') ? overrides.listTest5! : [['sequi']],
+        listTest6: overrides && overrides.hasOwnProperty('listTest6') ? overrides.listTest6! : ['et'],
     };
 };
 

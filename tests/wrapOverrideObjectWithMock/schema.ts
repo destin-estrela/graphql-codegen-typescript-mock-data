@@ -26,12 +26,13 @@ export default buildSchema(/* GraphQL */ `
     }
 
     type ListType {
-        stringList: [String!]!
-        nullableListOfObjects: [ABCType]
-        nullableStringList: [String!]
-        listOfObjects: [ABCType!]!
-        nonNullableNestedList: [[[[Avatar!]!]!]!]!
-        nestedList: [[[ABCType]]]
+        listTest1: [Avatar]!
+        listTest2: [Avatar!]!
+        listTest3: [[[[[Avatar!]!]!]]]!
+        listTest4: [[[Avatar!]]!]!
+
+        listTest5: [[String!]!]
+        listTest6: [String]
     }
 
     type CircularA {
